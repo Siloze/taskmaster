@@ -24,7 +24,25 @@ namespace taskmaster::gchinaul {
             std::unordered_map<std::string, CmdType> commands_;
     };
 
-    //to do (besoin de comprendre la suite)
+    /* CommandType::start -> "sleepy" */
+    class CommandParser
+    {
+        public:
+            explicit CommandParser(const CommandMap& map);
+
+            bool parse(
+                const std::string& line,
+                CommandArgs& out,
+                std::string& error
+            ) const;
+
+        private:
+            const CommandMap& map_;
+
+            static std::vector<std::string> tokenize(
+                const std::string& line
+            );
+    };
 }
 
 #endif
