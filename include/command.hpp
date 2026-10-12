@@ -32,7 +32,7 @@ namespace taskmaster::gchinaul {
 
             bool parse(
                 const std::string& line,
-                CommandArgs& out,
+                CmdArgs& out,
                 std::string& error
             ) const;
 

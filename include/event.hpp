@@ -30,7 +30,7 @@ namespace taskmaster::gchinaul {
     };
 
     struct SigEvent {
-        EventType type = EventType::none;
+        EventType type = EventType::None;
         int sig = 0;
     };
 }
