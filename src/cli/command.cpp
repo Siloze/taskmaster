@@ -1,9 +1,9 @@
-#include "command.hpp"
+#include "taskmaster/cli/command.hpp"
 
 #include <algorithm>
 #include <sstream>
 
-namespace taskmaster::gchinaul {
+namespace taskmaster {
 
     CommandMap::CommandMap()
         : commands_{

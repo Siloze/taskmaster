@@ -11,7 +11,7 @@
  * https://en.cppreference.com/cpp/container/unordered_map
  */
 
-namespace taskmaster::gchinaul {
+namespace taskmaster {
 
     class CommandMap {
         public:

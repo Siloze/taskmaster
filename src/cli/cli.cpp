@@ -1,9 +1,9 @@
-#include "cli.hpp"
+#include "taskmaster/cli/cli.hpp"
 
 #include <iostream>
 #include <utility>
 
-namespace taskmaster::gchinaul {
+namespace taskmaster {
 
     ControlShell::ControlShell(
 

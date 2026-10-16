@@ -8,7 +8,7 @@
 #include <functional>
 #include <string>
 
-namespace taskmaster::gchinaul {
+namespace taskmaster {
 
     class ControlShell {
 

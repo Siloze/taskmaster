@@ -5,7 +5,7 @@
 
 /* CLI -> args */
 
-namespace taskmaster::gchinaul {
+namespace taskmaster {
 
     enum class CmdType {
         Status,
