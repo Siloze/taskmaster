@@ -1,35 +1,37 @@
-#ifndef TASKMASTER_CLI_HPP
-#define TASKMASTER_CLI_HPP
-
-#include "command.hpp"
-
-/* https://en.cppreference.com/cpp/header/functional */
+#pragma once
 
 #include <functional>
 #include <string>
+#include "command.hpp"
 
 namespace taskmaster {
+class ControlShell {
+public:
+    using CommandHandler = std::function<void(const CmdArgs &)>;
+    using EofHandler = std::function<void()>;
 
-    class ControlShell {
+    ControlShell(CommandHandler commandHandler, EofHandler eofHandler);
+    ~ControlShell();
 
-        public:
+    ControlShell(const ControlShell &) = delete;
+    ControlShell &operator=(const ControlShell &) = delete;
 
-            using CommandHandler = std::function<void(const CmdArgs&)>;
+    void initialize();
+    void readChar();
+private:
 
-            ControlShell(
-                const CommandParser& parser,
-                CommandHandler handler
-            );
+    static void onLine(char *line);
+    static int completeSuggestion(int count, int key);
+    static ControlShell *active_;
+    std::string suggestionSuffix() const;
+    void clearSuggestion();
+    void showSuggestion();
 
-            void run();
-
-        private:
-
-            const CommandParser& parser_;
-            CommandHandler handler_;
-    };
+    CommandMap commandMap_;
+    CommandParser commandParser_;
+    CommandHandler commandHandler_;
+    EofHandler eofHandler_;
+    bool installed_;
+    bool suggestionVisible_;
+};
 }
-
-/* to do cli.cpp  bientôt */
-
-#endif

@@ -2,6 +2,16 @@ CXX := c++
 CPPFLAGS := -Iinclude
 CXXFLAGS := -std=c++17 -Wall -Werror -Wextra -Wpedantic
 
+# macOS ships a libedit compatibility layer; use GNU Readline when available.
+ifeq ($(shell uname -s),Darwin)
+READLINE_PREFIX := $(shell brew --prefix readline 2>/dev/null)
+ifneq ($(READLINE_PREFIX),)
+CPPFLAGS += -I$(READLINE_PREFIX)/include
+LDFLAGS += -L$(READLINE_PREFIX)/lib
+endif
+endif
+LDLIBS += -lreadline
+
 TARGET := taskmaster
 
 SOURCES := \
@@ -25,7 +35,7 @@ HEADERS := $(shell find include -type f -name '*.hpp')
 all: $(TARGET)
 
 $(TARGET): $(SOURCES) $(HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(SOURCES) -o $@
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(SOURCES) $(LDFLAGS) -o $@ $(LDLIBS)
 
 clean:
 	rm -f $(TARGET)

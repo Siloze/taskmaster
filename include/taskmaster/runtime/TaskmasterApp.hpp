@@ -6,7 +6,7 @@
 #include "taskmaster/diff/DiffBuilder.hpp"
 #include "taskmaster/diff/DiffExecutor.hpp"
 #include "taskmaster/io/SignalPipe.hpp"
-#include "taskmaster/cli/command.hpp"
+#include "taskmaster/cli/cli.hpp"
 
 namespace taskmaster {
 
@@ -23,25 +23,22 @@ private:
     void eventLoop();
 
     bool reloadConfiguration();
-    void executeCommand(const std::string &line);
+    void executeCommand(const CmdArgs &args);
 
     bool allChildrenStopped() const;
     int nextPollTimeoutMs() const;
-    void consumeStandardInput();
 
     void printStatus();
 
     ConfigParser parser_;
-    CommandMap CommandMap_;
-    CommandParser CommandParser_;
     std::string configPath_;
-    std::string inputBuffer_;
     TaskmasterConfig configuration_;
     DiffBuilder diffBuilder_;
     SignalPipe signalPipe_;
     std::unique_ptr<Logger> logger_;
     std::unique_ptr<ProcessSupervisor> supervisor_;
     std::unique_ptr<DiffExecutor> executor_;
+    std::unique_ptr<ControlShell> shell_;
     bool shuttingDown_;
 };
 

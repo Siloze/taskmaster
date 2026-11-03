@@ -74,7 +74,8 @@ private:
     void handleExit(ProgramRuntime &program, ProcessSlot &slot, int waitStatus);
     void maintain(ProgramRuntime &program);
     void trimStoppedExtraSlots(ProgramRuntime &program);
-    bool restartWithConfiguration(const ProgramConfig &configuration, std::string &error);
+    bool restartWithConfiguration(const ProgramConfig &configuration, bool shouldRun,
+                                  std::string &error);
     void pruneRemovedPrograms();
 
     std::map<std::string, ProgramRuntime> programs_;

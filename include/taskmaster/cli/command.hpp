@@ -24,7 +24,6 @@ namespace taskmaster {
             std::unordered_map<std::string, CmdType> commands_;
     };
 
-    /* CommandType::start -> "sleepy" */
     class CommandParser
     {
         public:

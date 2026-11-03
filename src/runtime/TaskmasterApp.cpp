@@ -8,28 +8,8 @@
 #include <unistd.h>
 
 namespace taskmaster {
-namespace {
-
-/*
-std::vector<std::string> splitWords(const std::string &line) {
-    std::istringstream stream(line);
-    std::vector<std::string> words;
-    std::string word;
-    while (stream >> word)
-        words.push_back(word);
-    return words;
-} */
-
-void printPrompt() {
-    std::cout << "taskmaster> " << std::flush;
-}
-
-} // namespace
-
 TaskmasterApp::TaskmasterApp(const std::string &configPath)
-    : CommandMap_(),
-      CommandParser_(CommandMap_),
-      configPath_(configPath),
+    : configPath_(configPath),
       shuttingDown_(false)
 {
 }
@@ -38,7 +18,6 @@ int TaskmasterApp::run() {
     if (!initialize())
         return 1;
     logger_->info("main", "taskmaster started");
-    printPrompt();
     eventLoop();
     logger_->info("main", "taskmaster stopped");
     return 0;
@@ -51,27 +30,37 @@ bool TaskmasterApp::initialize() {
         std::cerr << error << '\n';
         return false;
     }
+
     logger_.reset(new Logger(configuration_.logFile));
     if (!logger_->isOpen()) {
         std::cerr << "cannot open log file '" << configuration_.logFile << "'\n";
         return false;
     }
+
     if (!signalPipe_.install(error)) {
         logger_->error("main", error);
         std::cerr << error << '\n';
         return false;
     }
+
     supervisor_.reset(new ProcessSupervisor(*logger_));
     executor_.reset(new DiffExecutor(*supervisor_, *logger_));
 
     const Diff initialDiff = diffBuilder_.build(JobMap(), configuration_.programs);
+
     std::vector<std::string> errors;
     if (!executor_->apply(initialDiff, errors)) {
         logger_->error("main", "cannot apply initial configuration");
         std::cerr << "cannot apply initial configuration\n";
         return false;
     }
+
     logger_->info("config", "loaded '" + configPath_ + "'");
+
+    shell_.reset(new ControlShell(
+        [this](const CmdArgs &args) { executeCommand(args); },
+        [this]() { beginShutdown("standard input closed"); }));
+    shell_->initialize();
     return true;
 }
 
@@ -83,8 +72,7 @@ void TaskmasterApp::eventLoop() {
         descriptors[1].fd = signalPipe_.readFd();
         descriptors[1].events = POLLIN;
 
-        // poll sleeps without consuming CPU until input, a signal, or the
-        // next start/stop deadline requires supervision work.
+
         const int result = poll(descriptors, 2, nextPollTimeoutMs());
         if (result < 0) {
             if (errno == EINTR)
@@ -100,8 +88,6 @@ void TaskmasterApp::eventLoop() {
                 logger_->error("main", error);
                 beginShutdown("signal pipe failure");
             } else {
-                // SignalPipe only reports signals. All non-trivial work is
-                // deliberately performed here, in the normal main thread.
                 if (events.shutdownRequested)
                     beginShutdown("termination signal");
                 if (events.reloadRequested && !shuttingDown_)
@@ -111,9 +97,8 @@ void TaskmasterApp::eventLoop() {
             }
         }
         if (!shuttingDown_ && (descriptors[0].revents & (POLLIN | POLLHUP)))
-            consumeStandardInput();
+            shell_->readChar();
 
-        /* Handles timer expiry even when poll woke for another event. */
         supervisor_->tick();
     }
 }
@@ -178,46 +163,7 @@ int TaskmasterApp::nextPollTimeoutMs() const {
     return static_cast<int>(delay.count());
 }
 
-void TaskmasterApp::consumeStandardInput() {
-    char buffer[512];
-    const ssize_t count = read(STDIN_FILENO, buffer, sizeof(buffer));
-    if (count == 0) {
-        beginShutdown("standard input closed");
-        return;
-    }
-    if (count < 0) {
-        if (errno != EINTR && errno != EAGAIN)
-            logger_->error("cli", "cannot read standard input");
-        return;
-    }
-    // read() may contain several commands or only part of one command.
-    inputBuffer_.append(buffer, static_cast<std::size_t>(count));
-    for (;;) {
-        const std::size_t newline = inputBuffer_.find('\n');
-        if (newline == std::string::npos)
-            break;
-        std::string line = inputBuffer_.substr(0, newline);
-        inputBuffer_.erase(0, newline + 1);
-        if (!line.empty() && line.back() == '\r')
-            line.pop_back();
-        executeCommand(line);
-        if (shuttingDown_)
-            break;
-        printPrompt();
-    }
-}
-
-void TaskmasterApp::executeCommand(const std::string &line) {
-    CmdArgs args;
-    std::string error;
-
-    if (!CommandParser_.parse(line, args, error)) {
-
-        if (error != "empty command")
-            std::cout << error << '\n';
-        return;
-    }
-
+void TaskmasterApp::executeCommand(const CmdArgs &args) {
     ActionKind kind = ActionKind::Start;
 
     switch(args.command) {

@@ -90,8 +90,16 @@ bool ProcessSupervisor::update(const ProgramConfig &configuration, UpdateEffect 
         error = "cannot update unknown program '" + configuration.name + "'";
         return false;
     }
-    if (effect == UpdateEffect::RestartProcess)
-        return restartWithConfiguration(configuration, error);
+    if (effect == UpdateEffect::RestartProcess) {
+        ProgramRuntime &program = found->second;
+        bool wasRunning = false;
+        for (ProcessSlot &slot : program.slots) {
+            reap(program, slot);
+            if (isAlive(slot.pid) && slot.state != ProcessState::Stopping)
+                wasRunning = true;
+        }
+        return restartWithConfiguration(configuration, wasRunning || configuration.autostart, error);
+    }
 
     ProgramRuntime &program = found->second;
     const std::size_t oldCount = program.slots.size();
@@ -161,10 +169,11 @@ bool ProcessSupervisor::restart(const std::string &programName, std::string &err
     }
     const ProgramConfig configuration = found->second.configuration;
     logger_.info("process", "restart requested for '" + programName + "'");
-    return restartWithConfiguration(configuration, error);
+    return restartWithConfiguration(configuration, true, error);
 }
 
-bool ProcessSupervisor::restartWithConfiguration(const ProgramConfig &configuration, std::string &error) {
+bool ProcessSupervisor::restartWithConfiguration(const ProgramConfig &configuration, bool shouldRun,
+                                                 std::string &error) {
     error = configuration.validate();
     if (!error.empty())
         return false;
@@ -176,14 +185,14 @@ bool ProcessSupervisor::restartWithConfiguration(const ProgramConfig &configurat
     ProgramRuntime &program = found->second;
     program.configuration = configuration;
     program.removalPending = false;
-    program.wantsRunning = true;
+    program.wantsRunning = shouldRun;
     logger_.info("process", "restarting program '" + configuration.name + "'");
     if (program.slots.size() < configuration.numProcesses)
         program.slots.resize(configuration.numProcesses);
 
     for (std::size_t index = 0; index < program.slots.size(); ++index) {
         ProcessSlot &slot = program.slots[index];
-        const bool shouldRestart = index < configuration.numProcesses;
+        const bool shouldRestart = shouldRun && index < configuration.numProcesses;
         slot.restartRequested = shouldRestart;
         if (!isAlive(slot.pid) && shouldRestart) {
             slot.state = ProcessState::Exited;
