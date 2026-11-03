@@ -1,4 +1,5 @@
-#pragma once
+#ifndef TASKMASTER_DIFF_DIFF_BUILDER_HPP
+#define TASKMASTER_DIFF_DIFF_BUILDER_HPP
 
 #include "taskmaster/diff/Diff.hpp"
 #include "taskmaster/io/ConfigParser.hpp"
@@ -14,3 +15,4 @@ public:
 
 } // namespace taskmaster
 
+#endif

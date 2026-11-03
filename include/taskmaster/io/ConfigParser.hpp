@@ -1,4 +1,5 @@
-#pragma once
+#ifndef TASKMASTER_CONFIG_CONFIG_PARSER_HPP
+#define TASKMASTER_CONFIG_CONFIG_PARSER_HPP
 
 #include <map>
 #include <string>
@@ -22,3 +23,4 @@ public:
 
 }
 
+#endif

@@ -10,6 +10,7 @@
 namespace taskmaster {
 namespace {
 
+/*
 std::vector<std::string> splitWords(const std::string &line) {
     std::istringstream stream(line);
     std::vector<std::string> words;
@@ -17,7 +18,7 @@ std::vector<std::string> splitWords(const std::string &line) {
     while (stream >> word)
         words.push_back(word);
     return words;
-}
+} */
 
 void printPrompt() {
     std::cout << "taskmaster> " << std::flush;
@@ -26,7 +27,12 @@ void printPrompt() {
 } // namespace
 
 TaskmasterApp::TaskmasterApp(const std::string &configPath)
-    : configPath_(configPath), shuttingDown_(false) {}
+    : CommandMap_(),
+      CommandParser_(CommandMap_),
+      configPath_(configPath),
+      shuttingDown_(false)
+{
+}
 
 int TaskmasterApp::run() {
     if (!initialize())
@@ -202,40 +208,66 @@ void TaskmasterApp::consumeStandardInput() {
 }
 
 void TaskmasterApp::executeCommand(const std::string &line) {
-    const std::vector<std::string> words = splitWords(line);
-    if (words.empty())
-        return;
-    if (words[0] == "help") {
-        std::cout << "commands: status, start NAME, stop NAME, restart NAME, reload, quit\n";
-        return;
-    }
-    if (words[0] == "status") {
-        printStatus();
-        return;
-    }
-    if (words[0] == "reload") {
-        std::cout << (reloadConfiguration() ? "configuration reloaded\n" : "reload failed; see log\n");
-        return;
-    }
-    if (words[0] == "quit" || words[0] == "exit") {
-        beginShutdown("CLI request");
-        return;
-    }
-    if (words.size() != 2 || (words[0] != "start" && words[0] != "stop" && words[0] != "restart")) {
-        std::cout << "unknown command; type help\n";
+    CmdArgs args;
+    std::string error;
+
+    if (!CommandParser_.parse(line, args, error)) {
+
+        if (error != "empty command")
+            std::cout << error << '\n';
         return;
     }
 
     ActionKind kind = ActionKind::Start;
-    if (words[0] == "stop")
+
+    switch(args.command) {
+
+    case CmdType::Help:
+        std::cout << "commands: status, start NAME, stop NAME, "
+                    "restart NAME, reload, shutdown\n";
+        return;
+
+    case CmdType::Status:
+        printStatus();
+        return;
+
+    case CmdType::Reload:
+        std::cout <<
+            (reloadConfiguration()
+            ? "configuration reloaded\n"
+            : "reload failed; see the logs\n");
+        return;
+
+    case CmdType::ShutDown:
+        beginShutdown("CLI request");
+        return;
+
+    case CmdType::Start:
+        kind = ActionKind::Start;
+        break;
+    case CmdType::Stop:
         kind = ActionKind::Stop;
-    else if (words[0] == "restart")
+        break;
+    case CmdType::Restart:
         kind = ActionKind::Restart;
+        break;
+
+    }
+
+    if (args.command == CmdType::Stop)
+        kind = ActionKind::Stop;
+    else if (args.command == CmdType::Restart)
+        kind = ActionKind::Restart;
+
     Diff diff;
-    diff.add(Action{kind, words[1], std::nullopt});
+    diff.add(Action{kind, args.program, std::nullopt});
+
     std::vector<std::string> errors;
-    if (!executor_->apply(diff, errors))
-        std::cout << errors.front() << '\n';
+
+    if (!executor_->apply(diff, errors)) {
+        for (const std::string &message : errors)
+            std::cout << message << '\n';
+    }
 }
 
 void TaskmasterApp::printStatus() {

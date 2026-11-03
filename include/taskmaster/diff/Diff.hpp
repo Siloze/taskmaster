@@ -42,3 +42,4 @@ private:
     std::vector<Action> actions_;
 };
 
+}

@@ -1,6 +1,6 @@
 #include <iostream>
 
-#include "taskmaster/runtime/TaskmasterApp.hpp"
+#include "../include/taskmaster/runtime/TaskmasterApp.hpp"
 
 int main(int argc, char **argv) {
     if (argc != 2) {

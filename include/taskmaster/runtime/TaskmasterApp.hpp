@@ -6,6 +6,7 @@
 #include "taskmaster/diff/DiffBuilder.hpp"
 #include "taskmaster/diff/DiffExecutor.hpp"
 #include "taskmaster/io/SignalPipe.hpp"
+#include "taskmaster/cli/command.hpp"
 
 namespace taskmaster {
 
@@ -30,10 +31,12 @@ private:
 
     void printStatus();
 
+    ConfigParser parser_;
+    CommandMap CommandMap_;
+    CommandParser CommandParser_;
     std::string configPath_;
     std::string inputBuffer_;
     TaskmasterConfig configuration_;
-    ConfigParser parser_;
     DiffBuilder diffBuilder_;
     SignalPipe signalPipe_;
     std::unique_ptr<Logger> logger_;
