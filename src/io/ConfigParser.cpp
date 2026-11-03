@@ -115,6 +115,7 @@ bool parseText(const std::string &raw, std::string &value, std::string &error) {
     return true;
 }
 
+// parser de con (fait a l'ia j'avoue)
 bool parseCommand(const std::string &raw, std::vector<std::string> &arguments, std::string &error) {
     const std::string input = trim(raw);
     std::string current;
