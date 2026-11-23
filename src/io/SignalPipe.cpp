@@ -78,6 +78,8 @@ bool SignalPipe::install(std::string &error) {
     }
     if (!setNonBlocking(descriptors_[0], error) || !setNonBlocking(descriptors_[1], error))
         return false;
+    fcntl(descriptors_[0], F_SETFD, FD_CLOEXEC);
+    fcntl(descriptors_[1], F_SETFD, FD_CLOEXEC);
     signalWriteFd = descriptors_[1];
     for (unsigned int index = 0; index < handledSignalCount; ++index) {
         if (!installHandler(handledSignals[index], error)) {

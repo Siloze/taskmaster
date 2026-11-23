@@ -34,6 +34,16 @@ const char *effectName(UpdateEffect effect) {
     return "unknown";
 }
 
+void redirectInput() {
+
+    const int file = open("/dev/null", O_RDONLY);
+    if (file < 0)
+        _exit(126);
+    if (dup2(file, STDIN_FILENO) < 0)
+        _exit(126);
+    close(file);
+}
+
 void redirectOutput(const std::optional<std::string> &path, int descriptor) {
     const char *target = path.has_value() ? path->c_str() : "/dev/null";
     const int file = open(target, O_WRONLY | O_CREAT | O_APPEND, 0644);
@@ -238,6 +248,7 @@ bool ProcessSupervisor::launch(ProgramRuntime &program, ProcessSlot &slot, std::
             if (setenv(entry.first.c_str(), entry.second.c_str(), 1) != 0)
                 _exit(126);
         }
+        redirectInput();
         redirectOutput(program.configuration.stdoutPath, STDOUT_FILENO);
         redirectOutput(program.configuration.stderrPath, STDERR_FILENO);
         std::vector<char *> arguments;
@@ -280,8 +291,8 @@ void ProcessSupervisor::reap(ProgramRuntime &program, ProcessSlot &slot) {
     if (result == 0)
         return;
     if (result == slot.pid) {
-        slot.pid = -1;
         handleExit(program, slot, waitStatus);
+        slot.pid = -1;
         return;
     }
     if (errno == ECHILD) {
@@ -303,8 +314,7 @@ void ProcessSupervisor::handleExit(ProgramRuntime &program, ProcessSlot &slot, i
     const bool startupFailure = stateBeforeExit == ProcessState::Starting;
 
     slot.state = ProcessState::Exited;
-    logger_.info("process", "'" + program.configuration.name + "' pid exited with status "
-                 + std::to_string(exitCode));
+    logger_.info("process", "'" + program.configuration.name + "' pid=" + std::to_string(slot.pid) + " exited with status " + std::to_string(exitCode));
 
     if (program.removalPending)
         return;
