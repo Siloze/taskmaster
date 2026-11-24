@@ -96,9 +96,12 @@ void TaskmasterApp::eventLoop() {
                     supervisor_->tick();
             }
         }
-        if (!shuttingDown_ && (descriptors[0].revents & (POLLIN | POLLHUP)))
-            shell_->readChar();
-
+        if (!shuttingDown_) {
+            if (descriptors[0].revents & (POLLERR | POLLNVAL))
+                beginShutdown("standard input lost");
+            else if (descriptors[0].revents & (POLLIN | POLLHUP))
+                shell_->readChar();
+        }
         supervisor_->tick();
     }
 }
