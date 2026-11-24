@@ -1,15 +1,11 @@
-#ifndef TASKMASTER_COMMAND_HPP
-#define TASKMASTER_COMMAND_HPP
+#pragma once
 
 #include "event.hpp"
 
 #include <string>
-#include <unordered_map>
 #include <vector>
+#include <unordered_map>
 
-/* CLI -> args
- * https://en.cppreference.com/cpp/container/unordered_map
- */
 
 namespace taskmaster {
 
@@ -43,5 +39,3 @@ namespace taskmaster {
             );
     };
 }
-
-#endif

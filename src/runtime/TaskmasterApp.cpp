@@ -8,15 +8,12 @@
 #include <unistd.h>
 
 namespace taskmaster {
-TaskmasterApp::TaskmasterApp(const std::string &configPath)
-    : configPath_(configPath),
-      shuttingDown_(false)
-{
-}
+TaskmasterApp::TaskmasterApp(const std::string &configPath) : configPath_(configPath), shuttingDown_(false) {}
 
 int TaskmasterApp::run() {
     if (!initialize())
         return 1;
+
     logger_->info("main", "taskmaster started");
     eventLoop();
     logger_->info("main", "taskmaster stopped");
@@ -57,9 +54,13 @@ bool TaskmasterApp::initialize() {
 
     logger_->info("config", "loaded '" + configPath_ + "'");
 
-    shell_.reset(new ControlShell(
-        [this](const CmdArgs &args) { executeCommand(args); },
-        [this]() { beginShutdown("standard input closed"); }));
+    shell_.reset(
+        new ControlShell(
+            [this](const CmdArgs &args) { executeCommand(args); },
+            [this]() { beginShutdown("standard input closed"); }
+        )
+    );
+
     shell_->initialize();
     return true;
 }
@@ -107,18 +108,19 @@ void TaskmasterApp::eventLoop() {
 }
 
 bool TaskmasterApp::reloadConfiguration() {
-    // Parse into a temporary object: a malformed file never corrupts the
-    // currently active configuration.
+
     TaskmasterConfig candidate;
     std::string error;
     if (!parser_.parseFile(configPath_, candidate, error)) {
         logger_->error("config", "reload rejected: " + error);
         return false;
     }
+
     if (candidate.logFile != configuration_.logFile) {
         logger_->warning("config", "logfile changes require a restart; keeping current logfile");
         candidate.logFile = configuration_.logFile;
     }
+
     const Diff diff = diffBuilder_.build(configuration_.programs, candidate.programs);
     std::vector<std::string> errors;
     if (!executor_->apply(diff, errors)) {
@@ -139,6 +141,7 @@ void TaskmasterApp::beginShutdown(const std::string &reason) {
     Diff stopAll;
     for (const std::pair<const std::string, ProgramConfig> &entry : configuration_.programs)
         stopAll.add(Action{ActionKind::Stop, entry.first, std::nullopt});
+
     std::vector<std::string> errors;
     executor_->apply(stopAll, errors);
 }
@@ -153,12 +156,11 @@ bool TaskmasterApp::allChildrenStopped() const {
 
 int TaskmasterApp::nextPollTimeoutMs() const {
     const std::optional<std::chrono::steady_clock::time_point> deadline = supervisor_->nextDeadline();
+
     if (!deadline.has_value())
         return -1;
-    // ProcessSupervisor owns deadlines; the app only converts the closest one
-    // into poll's millisecond timeout.
-    const std::chrono::milliseconds delay = std::chrono::duration_cast<std::chrono::milliseconds>(
-        *deadline - std::chrono::steady_clock::now());
+
+    const std::chrono::milliseconds delay = std::chrono::duration_cast<std::chrono::milliseconds>(*deadline - std::chrono::steady_clock::now());
     if (delay.count() <= 0)
         return 0;
     if (delay.count() > INT_MAX)
@@ -172,8 +174,7 @@ void TaskmasterApp::executeCommand(const CmdArgs &args) {
     switch(args.command) {
 
     case CmdType::Help:
-        std::cout << "commands: status, start NAME, stop NAME, "
-                    "restart NAME, reload, shutdown\n";
+        std::cout << "commands: status, start NAME, stop NAME, restart NAME, reload, shutdown\n";
         return;
 
     case CmdType::Status:
@@ -181,10 +182,7 @@ void TaskmasterApp::executeCommand(const CmdArgs &args) {
         return;
 
     case CmdType::Reload:
-        std::cout <<
-            (reloadConfiguration()
-            ? "configuration reloaded\n"
-            : "reload failed; see the logs\n");
+        std::cout << (reloadConfiguration() ? "configuration reloaded\n" : "reload failed; see the logs\n");
         return;
 
     case CmdType::ShutDown:
@@ -222,10 +220,8 @@ void TaskmasterApp::executeCommand(const CmdArgs &args) {
 void TaskmasterApp::printStatus() {
     supervisor_->tick();
     for (const ProcessStatus &process : supervisor_->status()) {
-        std::cout << process.programName << '[' << process.slot << "] pid=" << process.pid
-                  << " state=" << toString(process.state)
-                  << " failed_starts=" << process.failedStarts << '\n';
+        std::cout << process.programName << '[' << process.slot << "] pid=" << process.pid << " state=" << toString(process.state) << " failed_starts=" << process.failedStarts << '\n';
     }
 }
 
-} // namespace taskmaster
+}

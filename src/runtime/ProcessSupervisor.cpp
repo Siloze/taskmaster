@@ -54,7 +54,7 @@ void redirectOutput(const std::optional<std::string> &path, int descriptor) {
     close(file);
 }
 
-} // namespace
+}
 
 const char *toString(ProcessState state) {
     switch (state) {
@@ -411,8 +411,7 @@ std::vector<ProcessStatus> ProcessSupervisor::status() const {
     for (const std::pair<const std::string, ProgramRuntime> &entry : programs_) {
         for (std::size_t index = 0; index < entry.second.slots.size(); ++index) {
             const ProcessSlot &slot = entry.second.slots[index];
-            result.push_back(ProcessStatus{entry.first, static_cast<unsigned int>(index), slot.pid,
-                                           slot.state, slot.failedStarts});
+            result.push_back(ProcessStatus{entry.first, static_cast<unsigned int>(index), slot.pid, slot.state, slot.failedStarts});
         }
     }
     return result;

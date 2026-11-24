@@ -1,9 +1,6 @@
-#ifndef TASKMASTER_EVENT_HPP
-#define TASKMASTER_EVENT_HPP
+#pragma once
 
 #include <string>
-
-/* CLI -> args */
 
 namespace taskmaster {
 
@@ -34,5 +31,3 @@ namespace taskmaster {
         int sig = 0;
     };
 }
-
-#endif

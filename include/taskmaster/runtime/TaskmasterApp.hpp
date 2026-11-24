@@ -31,15 +31,17 @@ private:
     void printStatus();
 
     ConfigParser parser_;
-    std::string configPath_;
-    TaskmasterConfig configuration_;
-    DiffBuilder diffBuilder_;
     SignalPipe signalPipe_;
+    std::string configPath_;
+    DiffBuilder diffBuilder_;
     std::unique_ptr<Logger> logger_;
-    std::unique_ptr<ProcessSupervisor> supervisor_;
-    std::unique_ptr<DiffExecutor> executor_;
+    TaskmasterConfig configuration_;
     std::unique_ptr<ControlShell> shell_;
+    std::unique_ptr<DiffExecutor> executor_;
+    std::unique_ptr<ProcessSupervisor> supervisor_;
+
     bool shuttingDown_;
+
 };
 
 }

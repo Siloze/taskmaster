@@ -30,7 +30,6 @@ SOURCES := \
 
 OBJ_DIR := obj
 OBJECTS := $(SOURCES:src/%.cpp=$(OBJ_DIR)/%.o)
-DEPS := $(OBJECTS:.o=.d)
 
 .PHONY: all clean fclean re
 
@@ -50,5 +49,3 @@ fclean: clean
 	rm -f $(TARGET)
 
 re: fclean all
-
--include $(DEPS)

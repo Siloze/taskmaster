@@ -91,7 +91,7 @@ int ControlShell::completeSuggestion(int count, int key) {
 
 void ControlShell::showSuggestion() {
 
-    // Compatibilité, merci chatgpt
+    // Compatibilité, merci stako-verflow
     if (!isatty(STDOUT_FILENO))
         return;
     const char *term = std::getenv("TERM");
@@ -120,12 +120,14 @@ void ControlShell::onLine(char *line) {
         active_->eofHandler_();
         return;
     }
+    //la cest quoi du coup ?
     const std::string input(line);
     std::free(line);
     if (input.find_first_not_of(" \t\r\n") != std::string::npos)
         add_history(input.c_str());
     CmdArgs args;
     std::string error;
+    //ah cool
     if (!active_->commandParser_.parse(input, args, error)) {
         if (error != "empty command")
             std::cout << error << '\n';
