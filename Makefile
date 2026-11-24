@@ -28,16 +28,27 @@ SOURCES := \
     src/runtime/ProgramConfig.cpp \
     src/runtime/TaskmasterApp.cpp
 
-HEADERS := $(shell find include -type f -name '*.hpp')
+OBJ_DIR := obj
+OBJECTS := $(SOURCES:src/%.cpp=$(OBJ_DIR)/%.o)
+DEPS := $(OBJECTS:.o=.d)
 
-.PHONY: all clean re
+.PHONY: all clean fclean re
 
 all: $(TARGET)
 
-$(TARGET): $(SOURCES) $(HEADERS)
-	$(CXX) $(CPPFLAGS) $(CXXFLAGS) $(SOURCES) $(LDFLAGS) -o $@ $(LDLIBS)
+$(TARGET): $(OBJECTS)
+	$(CXX) $(OBJECTS) $(LDFLAGS) -o $@ $(LDLIBS)
+
+$(OBJ_DIR)/%.o: src/%.cpp
+	@mkdir -p $(dir $@)
+	$(CXX) $(CPPFLAGS) $(CXXFLAGS) -MMD -MP -c $< -o $@
 
 clean:
+	rm -rf $(OBJ_DIR)
+
+fclean: clean
 	rm -f $(TARGET)
 
-re: clean all
+re: fclean all
+
+-include $(DEPS)
